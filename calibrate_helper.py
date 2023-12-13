@@ -77,15 +77,25 @@ class Calibrator(object):
 
         # calculate the error of reproject
         total_error = 0
-        for i in range(len(points_world)):
+        for i, img_path in enumerate(self.img_paths):
             points_pixel_repro, _ = cv2.projectPoints(points_world[i], v_rot[i], v_trans[i], mat_intri, coff_dis)
             error = cv2.norm(points_pixel[i], points_pixel_repro, cv2.NORM_L2) / len(points_pixel_repro)
             total_error += error
+
+            # Load the original image
+            img = cv2.imread(img_path)
+
+            # Draw the reprojected points on the image
+            img = cv2.drawChessboardCorners(img, (8, 5), np.squeeze(points_pixel_repro), True)
+
+            # Save the image with drawn points
+            cv2.imwrite(f'reprojected_{i+1}.png', img)
+
         print("Average error of reproject: {}".format(total_error / len(points_world)))
 
         self.mat_intri = mat_intri
         self.coff_dis = coff_dis
-        return mat_intri, coff_dis
+        return mat_intri, coff_dis, v_rot[0], v_trans[0]
 
 
     def dedistortion(self, save_dir):
